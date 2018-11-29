@@ -20,6 +20,7 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -27,8 +28,14 @@ import android.widget.SimpleAdapter;
 import android.widget.SimpleAdapter.ViewBinder;
 import android.widget.TextView;
 import com.amazonaws.demo.s3transferutility.R;
+import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.mobile.config.AWSConfiguration;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +52,7 @@ public class DownloadSelectionActivity extends ListActivity {
     private SimpleAdapter simpleAdapter;
     private ArrayList<HashMap<String, Object>> transferRecordMaps;
     private Util util;
+    private static final String TAG = DownloadSelectionActivity.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +72,7 @@ public class DownloadSelectionActivity extends ListActivity {
 
     private void initData() {
         // Gets the default S3 client.
-        s3 = util.getS3Client(DownloadSelectionActivity.this);
+        s3 = util.getS3Client();
         transferRecordMaps = new ArrayList<HashMap<String, Object>>();
     }
 
@@ -124,7 +132,15 @@ public class DownloadSelectionActivity extends ListActivity {
         @Override
         protected Void doInBackground(Void... inputs) {
             // Queries files in the bucket from S3.
-            s3ObjList = s3.listObjects(Constants.BUCKET_NAME).getObjectSummaries();
+            AWSConfiguration awsConfig = AWSMobileClient.getInstance().getConfiguration();
+            final JSONObject tuConfig = awsConfig.optJsonObject("S3TransferUtility");
+            String bucket = null;
+            try {
+                bucket = tuConfig.getString("Bucket");
+            } catch (JSONException e) {
+                Log.e(TAG, "Unable to parse awsconfiguration json", e);
+            }
+            s3ObjList = s3.listObjects(bucket).getObjectSummaries();
             transferRecordMaps.clear();
             for (S3ObjectSummary summary : s3ObjList) {
                 HashMap<String, Object> map = new HashMap<String, Object>();

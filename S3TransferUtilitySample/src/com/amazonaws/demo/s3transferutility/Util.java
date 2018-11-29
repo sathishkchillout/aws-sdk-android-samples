@@ -19,6 +19,7 @@ import android.content.Context;
 import android.net.Uri;
 
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.mobile.client.AWSMobileClient;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.regions.Region;
@@ -42,33 +43,13 @@ public class Util {
     private TransferUtility sTransferUtility;
 
     /**
-     * Gets an instance of CognitoCachingCredentialsProvider which is
-     * constructed using the given Context.
+     * Gets an instance of a S3 client
      *
-     * @param context An Context instance.
-     * @return A default credential provider.
-     */
-    private CognitoCachingCredentialsProvider getCredProvider(Context context) {
-        if (sCredProvider == null) {
-            sCredProvider = new CognitoCachingCredentialsProvider(
-                    context.getApplicationContext(),
-                    Constants.COGNITO_POOL_ID,
-                    Regions.fromName(Constants.COGNITO_POOL_REGION));
-        }
-        return sCredProvider;
-    }
-
-    /**
-     * Gets an instance of a S3 client which is constructed using the given
-     * Context.
-     *
-     * @param context An Context instance.
      * @return A default S3 client.
      */
-    public AmazonS3Client getS3Client(Context context) {
+    public AmazonS3Client getS3Client() {
         if (sS3Client == null) {
-            sS3Client = new AmazonS3Client(getCredProvider(context.getApplicationContext()));
-            sS3Client.setRegion(Region.getRegion(Regions.fromName(Constants.BUCKET_REGION)));
+            sS3Client = new AmazonS3Client(AWSMobileClient.getInstance());
         }
         return sS3Client;
     }
@@ -84,8 +65,8 @@ public class Util {
         if (sTransferUtility == null) {
             sTransferUtility = TransferUtility.builder()
                     .context(context.getApplicationContext())
-                    .s3Client(getS3Client(context.getApplicationContext()))
-                    .defaultBucket(Constants.BUCKET_NAME)
+                    .awsConfiguration(AWSMobileClient.getInstance().getConfiguration())
+                    .s3Client(getS3Client())
                     .build();
         }
 
